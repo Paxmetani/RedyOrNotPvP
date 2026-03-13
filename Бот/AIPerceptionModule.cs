@@ -27,6 +27,11 @@ public class AIPerceptionModule : MonoBehaviour
     [SerializeField] private bool showDebugLogs = false;
     [SerializeField] private bool showGizmos = true;
 
+    [Header("PvP Mode")]
+    [SerializeField] private bool   pvpMode          = false;
+    [SerializeField] private string myTeamTag        = "Enemy";
+    [SerializeField] private string pvpEnemyTeamTag  = "TeamA";
+
     private SmartEnemyAI core;
     private Transform currentTarget = null;
     private float nextVisionCheckTime = 0f;
@@ -37,6 +42,17 @@ public class AIPerceptionModule : MonoBehaviour
     public void Initialize(SmartEnemyAI coreAI)
     {
         core = coreAI;
+    }
+
+    /// <summary>
+    /// Enable PvP mode so this bot detects all enemies by team tag instead of only the Player tag.
+    /// Called by PvPMatchManager.ConfigureBotForPvP().
+    /// </summary>
+    public void SetPvPMode(bool enabled, string thisTeamTag, string enemyTeamTag)
+    {
+        pvpMode         = enabled;
+        myTeamTag       = thisTeamTag;
+        pvpEnemyTeamTag = enemyTeamTag;
     }
 
     public void UpdatePerception()
@@ -56,6 +72,13 @@ public class AIPerceptionModule : MonoBehaviour
 
     private void CheckVision()
     {
+        if (pvpMode)
+        {
+            CheckVisionPvP();
+            return;
+        }
+
+        // ── Campaign mode: target only the player ────────────────────────────
         GameObject player = GameObject.FindGameObjectWithTag("Player");
 
         if (player == null)
@@ -113,6 +136,94 @@ public class AIPerceptionModule : MonoBehaviour
 
         ClearTarget();
     }
+
+    // ─── PvP Vision: detect nearest visible enemy by team tag ────────────────
+
+    private void CheckVisionPvP()
+    {
+        Transform bestTarget   = null;
+        float     bestPriority = float.MinValue;   // higher priority = better candidate
+
+        // 1. Check the human player
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        if (playerObj != null)
+        {
+            var playerHM = playerObj.GetComponent<HealthManager>();
+            bool isEnemy = (playerHM == null) || (playerHM.TeamTag != myTeamTag);
+
+            if (isEnemy && (playerHM == null || !playerHM.IsDead))
+            {
+                float p = EvaluateTargetPriority(playerObj.transform);
+                if (p > bestPriority) { bestPriority = p; bestTarget = playerObj.transform; }
+            }
+        }
+
+        // 2. Check enemy bots (use AISquadManager list when available to avoid FindObjectsOfType)
+        if (AISquadManager.Instance != null)
+        {
+            foreach (var ai in AISquadManager.Instance.GetAllRegisteredAI())
+            {
+                if (ai == null || ai == core || ai.IsDead()) continue;
+                if (ai.Health != null && ai.Health.TeamTag == myTeamTag) continue;
+
+                float p = EvaluateTargetPriority(ai.Transform);
+                if (p > bestPriority) { bestPriority = p; bestTarget = ai.Transform; }
+            }
+        }
+        else
+        {
+            // Fallback: iterate scene objects
+            var allAI = FindObjectsByType<SmartEnemyAI>(FindObjectsSortMode.None);
+            foreach (var ai in allAI)
+            {
+                if (ai == null || ai == core || ai.IsDead()) continue;
+                if (ai.Health != null && ai.Health.TeamTag == myTeamTag) continue;
+
+                float p = EvaluateTargetPriority(ai.Transform);
+                if (p > bestPriority) { bestPriority = p; bestTarget = ai.Transform; }
+            }
+        }
+
+        if (bestTarget != null)
+            SetTarget(bestTarget, true);
+        else
+            ClearTarget();
+    }
+
+    /// <summary>
+    /// Returns a priority score for a candidate target (higher = better).
+    /// Returns float.MinValue when the target is outside vision cone or blocked.
+    /// </summary>
+    private float EvaluateTargetPriority(Transform target)
+    {
+        if (target == null) return float.MinValue;
+
+        Vector3 toTarget = target.position - core.Transform.position;
+        float   distance = toTarget.magnitude;
+
+        if (distance > visionRange) return float.MinValue;
+
+        Vector3 dirToTarget = toTarget.normalized;
+        dirToTarget.y = 0;
+
+        Vector3 forward = core.Transform.forward;
+        forward.y = 0;
+
+        float angle          = Vector3.Angle(forward, dirToTarget);
+        float effectiveAngle = visionAngle * (1f + alertness * 0.5f);
+
+        // Central vision
+        if (angle <= effectiveAngle * 0.5f && HasLineOfSight(target))
+            return 1f / Mathf.Max(0.01f, distance);
+
+        // Peripheral vision
+        if (distance <= peripheralRange && angle <= peripheralAngle * 0.5f && HasLineOfSight(target))
+            return 0.5f / Mathf.Max(0.01f, distance);
+
+        return float.MinValue;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
 
     private bool HasLineOfSight(Transform target)
     {
