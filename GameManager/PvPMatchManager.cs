@@ -340,12 +340,10 @@ public class PvPMatchManager : MonoBehaviour
         bool teamAWiped = IsTeamWiped(playerTeamTag);
         bool teamBWiped = IsTeamWiped(enemyTeamTag);
 
-        if (teamAWiped && !teamBWiped)
-            EndMatch(false);   // enemy team wins
-        else if (teamBWiped && !teamAWiped)
+        if (teamBWiped && !teamAWiped)
             EndMatch(true);    // player team wins
         else if (teamAWiped)
-            EndMatch(false);   // both wiped → loss for player
+            EndMatch(false);   // enemy team wins (or both wiped = loss)
     }
 
     private bool IsTeamWiped(string teamTag)
@@ -428,5 +426,5 @@ public class PvPMatchResults
 
     /// <summary>Time formatted as MM:SS.</summary>
     public string FormattedTime =>
-        $"{Mathf.FloorToInt(matchTime / 60):00}:{(matchTime % 60):00}";
+        $"{Mathf.FloorToInt(matchTime / 60):00}:{Mathf.FloorToInt(matchTime % 60):00}";
 }
