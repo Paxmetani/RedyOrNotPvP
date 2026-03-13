@@ -54,10 +54,14 @@ public class AISquadManager : MonoBehaviour
         BroadcastAllyDeath(ai);
 
         Debug.Log($"[SquadManager] Unregistered {ai.name}.  Remaining: {registeredAI.Count}");
-        if(registeredAI.Count <=0)
+
+        // In PvP mode PvPMatchManager tracks eliminations itself; skip campaign extraction.
+        if (PvPMatchManager.Instance != null) return;
+
+        if (registeredAI.Count <= 0)
         {
             Debug.Log("[SquadManager] No more registered AI.");
-            GameManagerTactical.Instance.RequestExtraction();
+            GameManagerTactical.Instance?.RequestExtraction();
         }
     }
 
@@ -177,6 +181,10 @@ public class AISquadManager : MonoBehaviour
         {
             if (ai == null || ai == origin || ai.IsDead()) continue;
 
+            // In PvP mode only share intel with same-team members
+            if (origin.Health != null && ai.Health != null &&
+                origin.Health.TeamTag != ai.Health.TeamTag) continue;
+
             float distance = Vector3.Distance(origin.Transform.position, ai.Transform.position);
             if (distance <= range)
             {
@@ -186,6 +194,12 @@ public class AISquadManager : MonoBehaviour
 
         return nearby;
     }
+
+    /// <summary>
+    /// Returns a snapshot of all currently registered AI.
+    /// Used by AIPerceptionModule in PvP mode to iterate potential targets.
+    /// </summary>
+    public IReadOnlyList<SmartEnemyAI> GetAllRegisteredAI() => registeredAI;
 
     private void OnDrawGizmosSelected()
     {
