@@ -33,11 +33,20 @@ public class HealthManager : MonoBehaviour, IDamageable
     public float HealthPercentage => maxHealth > 0 ? currentHealth / maxHealth : 0f;
     public string TeamTag => teamTag;
 
+    public void SetTeamTag(string newTeamTag, bool syncUnityTag = true, bool warnOnMismatch = true)
+    {
+        teamTag = newTeamTag;
+        if (syncUnityTag && !string.IsNullOrEmpty(newTeamTag))
+            TeamResolver.TrySyncUnityTag(gameObject, newTeamTag, warnOnMismatch);
+    }
+
     private void Awake()
     {
         currentHealth = maxHealth;
         IsDead = false;
         canTakeDamage = true;
+        if (!string.IsNullOrEmpty(teamTag))
+            TeamResolver.TrySyncUnityTag(gameObject, teamTag, warnOnMismatch: false);
         if (showDebugLogs)
         {
             Debug.Log($"[HealthManager] {gameObject.name} initialized.  HP: {currentHealth}/{maxHealth}, Team: {teamTag}");

@@ -12,6 +12,8 @@ public class InteractableSettings : MonoBehaviour
     [Header("Enemy Specific")]
     public bool isEnemy = false;
     public string defaultInfo = "Enemy";
+    public string allyInfo = "Ally";
+    public string allyDownInfo = "Ally (Down)";
     public string surrenderedInfo = "Arrest (Hold E)";
     public string arrestingInfo = "Arresting...";
     public string arrestedInfo = "Arrested";
@@ -36,6 +38,15 @@ public class InteractableSettings : MonoBehaviour
 
     private void UpdateEnemyInteractInfo()
     {
+        bool isEnemyToPlayer = TeamResolver.IsEnemyToPlayer(enemyAI);
+        isEnemy = isEnemyToPlayer;
+
+        if (!isEnemyToPlayer)
+        {
+            interactInfo = enemyAI.IsDead() ? allyDownInfo : allyInfo;
+            return;
+        }
+
         // Проверяем состояние психологии
         if (enemyAI.Psychology != null && enemyAI.Psychology.HasSurrendered())
         {

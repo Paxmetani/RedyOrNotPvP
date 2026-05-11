@@ -162,7 +162,7 @@ public class AICombatModule : MonoBehaviour
             if (targetHealth != null)
             {
                 // Проверить на врага
-                if (targetHealth.TeamTag != core.Health.TeamTag)
+                if (TeamResolver.IsEnemy(core, targetHealth))
                 {
                     targetHealth.TakeDamage(weaponDamage, hit.point, aimDir);
 
@@ -310,7 +310,7 @@ public class AICombatModule : MonoBehaviour
                 if (targetHealth == null)
                     targetHealth = hit.collider.GetComponentInParent<HealthManager>();
 
-                if (targetHealth != null && targetHealth.TeamTag != core.Health.TeamTag)
+                if (targetHealth != null && TeamResolver.IsEnemy(core, targetHealth))
                 {
                     // ������ ����� ��� ����������
                     targetHealth.TakeDamage(weaponDamage * 0.5f, hit.point, aimDir);

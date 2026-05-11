@@ -108,7 +108,8 @@ public class PlayerPressureSystem : MonoBehaviour
 
         if (enemyAI != null && !enemyAI.IsDead())
         {
-            currentTargetAI = enemyAI;
+            if (TeamResolver.IsEnemy(this, enemyAI))
+                currentTargetAI = enemyAI;
         }
     }
 
@@ -213,6 +214,9 @@ public class PlayerPressureSystem : MonoBehaviour
                 enemyAI = col.GetComponentInParent<SmartEnemyAI>();
 
             if (enemyAI == null || enemyAI.IsDead())
+                continue;
+
+            if (!TeamResolver.IsEnemy(this, enemyAI))
                 continue;
 
             Vector3 dirToEnemy = (enemyAI.Transform.position - transform.position).normalized;
