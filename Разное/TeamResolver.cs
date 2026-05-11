@@ -9,6 +9,7 @@ public static class TeamResolver
 {
     private const string Untagged = "Untagged";
     private const string PlayerTag = "Player";
+    private const bool UnknownTeamsAreHostile = true;
 
     private static readonly HashSet<int> warnedObjects = new HashSet<int>();
     private static string cachedPlayerTeamTag;
@@ -69,7 +70,7 @@ public static class TeamResolver
         string targetTeam = ResolveTeamTag(target);
 
         if (string.IsNullOrEmpty(observerTeam) || string.IsNullOrEmpty(targetTeam))
-            return true;
+            return UnknownTeamsAreHostile;
 
         return observerTeam != targetTeam;
     }
@@ -80,7 +81,7 @@ public static class TeamResolver
         string targetTeam = ResolveTeamTag(target);
 
         if (string.IsNullOrEmpty(playerTeam) || string.IsNullOrEmpty(targetTeam))
-            return true;
+            return UnknownTeamsAreHostile;
 
         return playerTeam != targetTeam;
     }
@@ -92,14 +93,12 @@ public static class TeamResolver
         var hm = obj.GetComponentInParent<HealthManager>();
         if (hm != null)
         {
-            hm.teamTag = teamTag;
-            obj = hm.gameObject;
+            hm.SetTeamTag(teamTag, syncUnityTag, warnOnMismatch);
+            return;
         }
 
         if (syncUnityTag)
-        {
             TrySyncUnityTag(obj, teamTag, warnOnMismatch);
-        }
     }
 
     public static void TrySyncUnityTag(GameObject obj, string teamTag, bool warnOnMismatch = true)
