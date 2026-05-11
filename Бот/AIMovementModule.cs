@@ -744,10 +744,7 @@ public class AIMovementModule : MonoBehaviour
             if (otherAI == null || otherAI == core || otherAI.IsDead()) continue;
 
             // Проверить что это союзник
-            if (otherAI.Health == null || core.Health == null) continue;
-            
-            // Проверить тим-тег (вместо IsTeammate используем TeamTag)
-            if (otherAI.Health.TeamTag != core.Health.TeamTag) continue;
+            if (!TeamResolver.IsAlly(core, otherAI)) continue;
 
             // Вычислить расстояние
             float distance = Vector3.Distance(core.Transform.position, otherAI.Transform.position);

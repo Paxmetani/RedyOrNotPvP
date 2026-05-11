@@ -182,8 +182,7 @@ public class AISquadManager : MonoBehaviour
             if (ai == null || ai == origin || ai.IsDead()) continue;
 
             // In PvP mode only share intel with same-team members
-            if (origin.Health != null && ai.Health != null &&
-                origin.Health.TeamTag != ai.Health.TeamTag) continue;
+            if (!TeamResolver.IsAlly(origin, ai)) continue;
 
             float distance = Vector3.Distance(origin.Transform.position, ai.Transform.position);
             if (distance <= range)

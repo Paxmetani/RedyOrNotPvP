@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// FIXED: Уведомляет AI о звуках с фильтрацией команд
+/// FIXED: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ AI пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 /// </summary>
 public class GunshotNotifier : MonoBehaviour
 {
@@ -18,7 +18,7 @@ public class GunshotNotifier : MonoBehaviour
     [SerializeField] private bool showDebugLogs = false;
 
     /// <summary>
-    /// IMPROVED: Уведомить о звуке выстрела
+    /// IMPROVED: пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     /// </summary>
     public void NotifyGunshot(Vector3 position, float volume = 1f, HealthManager shooter = null)
     {
@@ -26,14 +26,14 @@ public class GunshotNotifier : MonoBehaviour
     }
 
     /// <summary>
-    /// MAIN:  Уведомить о звуке с фильтрацией команд
+    /// MAIN:  пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     /// </summary>
     public void NotifySound(Vector3 position, SoundType soundType, float volume = 1f, HealthManager source = null)
     {
-        // Определить радиус
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
         float effectiveRange = GetSoundRange(soundType) * volume;
 
-        // Найти всех AI в радиусе
+        // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ AI пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         Collider[] nearbyColliders = Physics.OverlapSphere(position, effectiveRange, aiLayer);
 
         int notifiedCount = 0;
@@ -46,24 +46,23 @@ public class GunshotNotifier : MonoBehaviour
 
             if (ai == null || ai.IsDead()) continue;
 
-            // КРИТИЧНО: Фильтр команды
-            if (source != null && ai.Health != null)
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
+            if (source != null)
             {
-                // Если звук от союзника - ИГНОРИРУЕМ
-                if (ai.Health.TeamTag == source.TeamTag)
+                if (TeamResolver.IsAlly(source, ai))
                 {
                     if (showDebugLogs && Time.frameCount % 120 == 0)
                         Debug.Log($"[Sound] {ai.name} - Ignored {soundType} from ally {source.name}");
 
-                    continue; // Не реагируем на союзников
+                    continue; // пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
                 }
             }
 
-            // Рассчитать интенсивность с учетом расстояния
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
             float distance = Vector3.Distance(position, ai.Transform.position);
             float intensity = CalculateIntensity(distance, effectiveRange, volume);
 
-            // Уведомить AI
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ AI
             if (ai.Perception != null)
             {
                 ai.Perception.OnHearSound(position, soundType, intensity);

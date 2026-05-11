@@ -152,7 +152,7 @@ public class PvPMatchManager : MonoBehaviour
             var playerHM = player.GetComponent<HealthManager>();
             if (playerHM != null)
             {
-                playerHM.teamTag = playerTeamTag;
+                TeamResolver.AssignTeamTag(playerHM.gameObject, playerTeamTag);
                 playerHM.OnDeath.AddListener(OnPlayerDied.Invoke);
                 playerHM.OnDeath.AddListener(() => HandlePlayerDeath(playerHM));
             }
@@ -161,8 +161,7 @@ public class PvPMatchManager : MonoBehaviour
 
     private void ConfigureBotForPvP(SmartEnemyAI bot, string myTeam, string enemyTeam)
     {
-        if (bot.Health != null)
-            bot.Health.teamTag = myTeam;
+        TeamResolver.AssignTeamTag(bot.gameObject, myTeam);
 
         var perception = bot.GetComponent<AIPerceptionModule>();
         if (perception != null)
@@ -308,6 +307,7 @@ public class PvPMatchManager : MonoBehaviour
             bot.transform.position = spawnPoint.position;
 
         bot.Health.Revive(bot.Health.maxHealth);
+        TeamResolver.AssignTeamTag(bot.gameObject, teamTag);
         bot.Blackboard.Clear();
         bot.Blackboard.SetBool(BlackboardKey.HasSurrendered, false);
         bot.enabled = true;
@@ -323,6 +323,7 @@ public class PvPMatchManager : MonoBehaviour
             player.transform.position = spawnPoint.position;
 
         playerHM.Revive(playerHM.maxHealth);
+        TeamResolver.AssignTeamTag(playerHM.gameObject, playerTeamTag);
 
         var ps = player?.GetComponent<PlayerState>();
         if (ps != null) ps.isDead = false;

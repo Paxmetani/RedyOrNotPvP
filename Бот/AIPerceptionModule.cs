@@ -55,6 +55,12 @@ public class AIPerceptionModule : MonoBehaviour
         pvpEnemyTeamTag = enemyTeamTag;
     }
 
+    private string GetSelfTeamTag()
+    {
+        if (!string.IsNullOrEmpty(myTeamTag)) return myTeamTag;
+        return TeamResolver.ResolveTeamTag(core);
+    }
+
     public void UpdatePerception()
     {
         if (Time.time >= nextVisionCheckTime)
@@ -141,6 +147,7 @@ public class AIPerceptionModule : MonoBehaviour
 
     private void CheckVisionPvP()
     {
+        string selfTeamTag = GetSelfTeamTag();
         Transform bestTarget   = null;
         float     bestPriority = float.MinValue;   // higher priority = better candidate
 
@@ -149,7 +156,7 @@ public class AIPerceptionModule : MonoBehaviour
         if (playerObj != null)
         {
             var playerHM = playerObj.GetComponent<HealthManager>();
-            bool isEnemy = (playerHM == null) || (playerHM.TeamTag != myTeamTag);
+            bool isEnemy = TeamResolver.IsEnemy(core, playerObj.transform, selfTeamTag);
 
             if (isEnemy && (playerHM == null || !playerHM.IsDead))
             {
@@ -164,7 +171,7 @@ public class AIPerceptionModule : MonoBehaviour
             foreach (var ai in AISquadManager.Instance.GetAllRegisteredAI())
             {
                 if (ai == null || ai == core || ai.IsDead()) continue;
-                if (ai.Health != null && ai.Health.TeamTag == myTeamTag) continue;
+                if (!TeamResolver.IsEnemy(core, ai.Transform, selfTeamTag)) continue;
 
                 float p = EvaluateTargetPriority(ai.Transform);
                 if (p > bestPriority) { bestPriority = p; bestTarget = ai.Transform; }
@@ -177,7 +184,7 @@ public class AIPerceptionModule : MonoBehaviour
             foreach (var ai in allAI)
             {
                 if (ai == null || ai == core || ai.IsDead()) continue;
-                if (ai.Health != null && ai.Health.TeamTag == myTeamTag) continue;
+                if (!TeamResolver.IsEnemy(core, ai.Transform, selfTeamTag)) continue;
 
                 float p = EvaluateTargetPriority(ai.Transform);
                 if (p > bestPriority) { bestPriority = p; bestTarget = ai.Transform; }
@@ -389,6 +396,8 @@ public class AIPerceptionModule : MonoBehaviour
     /// </summary>
     private bool CheckIfAllyAtPosition(Vector3 soundPosition)
     {
+        string selfTeamTag = GetSelfTeamTag();
+
         // Найти всех AI рядом с источником звука (в радиусе 3м)
         Collider[] nearbyColliders = Physics.OverlapSphere(soundPosition, 3f);
 
@@ -401,14 +410,8 @@ public class AIPerceptionModule : MonoBehaviour
             if (otherAI == null || otherAI == core) continue;
 
             // Проверить команду
-            if (otherAI.Health != null && core.Health != null)
-            {
-                if (otherAI.Health.TeamTag == core.Health.TeamTag)
-                {
-                    // Нашли союзника в источнике звука
-                    return true;
-                }
-            }
+            if (TeamResolver.IsAlly(core, otherAI, selfTeamTag))
+                return true;
         }
 
         return false; // Никого не нашли или враг
