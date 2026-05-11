@@ -38,7 +38,8 @@ public class HealthManager : MonoBehaviour, IDamageable
         currentHealth = maxHealth;
         IsDead = false;
         canTakeDamage = true;
-        TeamResolver.TrySyncUnityTag(gameObject, teamTag, warnOnMismatch: false);
+        if (!string.IsNullOrEmpty(teamTag))
+            TeamResolver.TrySyncUnityTag(gameObject, teamTag, warnOnMismatch: false);
         if (showDebugLogs)
         {
             Debug.Log($"[HealthManager] {gameObject.name} initialized.  HP: {currentHealth}/{maxHealth}, Team: {teamTag}");
